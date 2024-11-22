@@ -1,7 +1,7 @@
 # MB-iSTFT-VITS-8000Hz
 ### About this repository
 This repository is a fork of [https://github.com/MasayaKawamura/MB-iSTFT-VITS](https://github.com/MasayaKawamura/MB-iSTFT-VITS)by Masaya Kawamura, Yuma Shirahata, Ryuichi Yamamoto, Kentaro Tachibana. The original repository is official for [paper](https://arxiv.org/abs/2210.15975).
-In this fork, I have added config file [ljs_mb_istft_vits_8k.jsonn](configs/ljs_mb_istft_vits_8k.json)
+In this fork, I have added config file [ljs_mb_istft_vits_8k.json](configs/ljs_mb_istft_vits_8k.json)
  and modified prameter values of ConvTranspose1d used in Generator of model for training 8000Hz data.
 
 ### 1. Pre-requisites
