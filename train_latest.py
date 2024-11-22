@@ -85,6 +85,7 @@ def run(rank, n_gpus, hps):
 
   net_g = SynthesizerTrn(
       len(symbols),
+      hps.data.sampling_rate,
       hps.data.filter_length // 2 + 1,
       hps.train.segment_size // hps.data.hop_length,
       **hps.model).cuda(rank)

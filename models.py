@@ -305,7 +305,7 @@ class iSTFT_Generator(torch.nn.Module):
 
 
 class Multiband_iSTFT_Generator(torch.nn.Module):
-    def __init__(self, initial_channel, resblock, resblock_kernel_sizes, resblock_dilation_sizes, upsample_rates, upsample_initial_channel, upsample_kernel_sizes, gen_istft_n_fft, gen_istft_hop_size, subbands, gin_channels=0):
+    def __init__(self, sampling_rate, initial_channel, resblock, resblock_kernel_sizes, resblock_dilation_sizes, upsample_rates, upsample_initial_channel, upsample_kernel_sizes, gen_istft_n_fft, gen_istft_hop_size, subbands, gin_channels=0):
         super(Multiband_iSTFT_Generator, self).__init__()
         # self.h = h
         self.subbands = subbands
@@ -315,10 +315,16 @@ class Multiband_iSTFT_Generator(torch.nn.Module):
         resblock = modules.ResBlock1 if resblock == '1' else modules.ResBlock2
 
         self.ups = nn.ModuleList()
-        for i, (u, k) in enumerate(zip(upsample_rates, upsample_kernel_sizes)):
-            self.ups.append(weight_norm(
-                ConvTranspose1d(upsample_initial_channel//(2**i), upsample_initial_channel//(2**(i+1)),
-                                k, u, padding=(k-u)//2)))
+        if sampling_rate == 8000:
+          for i, (u, k) in enumerate(zip(upsample_rates, upsample_kernel_sizes)):
+              self.ups.append(weight_norm(
+                  ConvTranspose1d(upsample_initial_channel//(2**i), upsample_initial_channel//(2**(i+1)),
+                                  k, u, padding=(u//2 + u%2), output_padding=u%2)))
+        else:
+          for i, (u, k) in enumerate(zip(upsample_rates, upsample_kernel_sizes)):
+              self.ups.append(weight_norm(
+                  ConvTranspose1d(upsample_initial_channel//(2**i), upsample_initial_channel//(2**(i+1)),
+                                  k, u, padding=(k-u)//2)))
 
         self.resblocks = nn.ModuleList()
         for i in range(len(self.ups)):
@@ -570,6 +576,7 @@ class SynthesizerTrn(nn.Module):
 
   def __init__(self, 
     n_vocab,
+    sampling_rate,
     spec_channels,
     segment_size,
     inter_channels,
@@ -598,6 +605,7 @@ class SynthesizerTrn(nn.Module):
 
     super().__init__()
     self.n_vocab = n_vocab
+    self.sampling_rate = sampling_rate
     self.spec_channels = spec_channels
     self.inter_channels = inter_channels
     self.hidden_channels = hidden_channels
@@ -631,7 +639,7 @@ class SynthesizerTrn(nn.Module):
         p_dropout)
     if mb_istft_vits == True:
       print('Mutli-band iSTFT VITS')
-      self.dec = Multiband_iSTFT_Generator(inter_channels, resblock, resblock_kernel_sizes, resblock_dilation_sizes, upsample_rates, upsample_initial_channel, upsample_kernel_sizes, gen_istft_n_fft, gen_istft_hop_size, subbands, gin_channels=gin_channels)
+      self.dec = Multiband_iSTFT_Generator(sampling_rate, inter_channels, resblock, resblock_kernel_sizes, resblock_dilation_sizes, upsample_rates, upsample_initial_channel, upsample_kernel_sizes, gen_istft_n_fft, gen_istft_hop_size, subbands, gin_channels=gin_channels)
     elif ms_istft_vits == True:
       print('Mutli-stream iSTFT VITS')
       self.dec = Multistream_iSTFT_Generator(inter_channels, resblock, resblock_kernel_sizes, resblock_dilation_sizes, upsample_rates, upsample_initial_channel, upsample_kernel_sizes, gen_istft_n_fft, gen_istft_hop_size, subbands, gin_channels=gin_channels)
